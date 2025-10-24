@@ -1,6 +1,6 @@
 """
 Flask web application to remove consecutive duplicate rows from Excel files.
-Duplicates are identified based on Column B (Author) and Column C (Title).
+Duplicates are identified based on Column B (Author), Column C (Title), and Column G.
 """
 
 from flask import Flask, render_template, request, send_file, flash, redirect, url_for
@@ -21,7 +21,7 @@ def allowed_file(filename):
 
 def remove_consecutive_duplicates(file_stream):
     """
-    Remove consecutive duplicate rows from an Excel file based on columns B and C.
+    Remove consecutive duplicate rows from an Excel file based on columns B, C, and G.
     
     Args:
         file_stream: File stream of the uploaded Excel file
@@ -35,17 +35,20 @@ def remove_consecutive_duplicates(file_stream):
     # Store initial row count
     initial_rows = len(df)
     
-    # Check if file has at least 3 columns
-    if len(df.columns) < 3:
-        raise ValueError("The file must have at least 3 columns.")
+    # Check if file has at least 7 columns (to access column G)
+    if len(df.columns) < 7:
+        raise ValueError("The file must have at least 7 columns to access Column G.")
     
-    # Get column names for the 2nd (index 1) and 3rd (index 2) columns
+    # Get column names for the 2nd (index 1), 3rd (index 2), and 7th (index 6) columns
     col_b = df.columns[1]  # Column B (2nd column)
     col_c = df.columns[2]  # Column C (3rd column)
+    col_g = df.columns[6]  # Column G (7th column)
     
     # Create a boolean mask to identify rows that are NOT consecutive duplicates
-    # A row is kept if it's different from the previous row in either Column B or Column C
-    mask = (df[col_b] != df[col_b].shift(1)) | (df[col_c] != df[col_c].shift(1))
+    # A row is kept if it's different from the previous row in any of Column B, C, or G
+    mask = ((df[col_b] != df[col_b].shift(1)) | 
+            (df[col_c] != df[col_c].shift(1)) | 
+            (df[col_g] != df[col_g].shift(1)))
     
     # Apply the mask to keep only non-duplicate rows
     df_cleaned = df[mask].copy()
@@ -59,7 +62,8 @@ def remove_consecutive_duplicates(file_stream):
         'final_rows': final_rows,
         'removed_rows': removed_rows,
         'col_b': col_b,
-        'col_c': col_c
+        'col_c': col_c,
+        'col_g': col_g
     }
     
     return df_cleaned, stats
@@ -102,7 +106,7 @@ def upload_file():
         # Flash success message with statistics
         flash(f'Success! Removed {stats["removed_rows"]} consecutive duplicate(s).', 'success')
         flash(f'Original rows: {stats["initial_rows"]} → Final rows: {stats["final_rows"]}', 'info')
-        flash(f'Compared columns: "{stats["col_b"]}" and "{stats["col_c"]}"', 'info')
+        flash(f'Compared columns: "{stats["col_b"]}", "{stats["col_c"]}", and "{stats["col_g"]}"', 'info')
         
         # Send the cleaned file for download
         return send_file(
@@ -121,5 +125,5 @@ def upload_file():
 
 if __name__ == '__main__':
     # Use environment variable for port (required for Render)
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=False)
