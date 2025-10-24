@@ -456,7 +456,7 @@
                 <div class="upload-text">
                     <span class="file-label">Choose Excel file</span> or drag & drop here
                 </div>
-                <p class="upload-subtext">Supports .xlsx and .xls files up to 16MB</p>
+                <p class="upload-subtext">Supports .xlsx and .xls files up to 8MB</p>
                 <input type="file" id="fileInput" name="file" accept=".xlsx,.xls" required>
                 <div class="file-name" id="fileName" style="display: none;"></div>
             </div>
@@ -487,7 +487,17 @@
         fileInput.addEventListener('change', function() {
             if (this.files.length > 0) {
                 const file = this.files[0];
-                fileName.innerHTML = `✓ ${file.name} <span style="color: #10b981;">(${(file.size / 1024).toFixed(1)} KB)</span>`;
+                const maxSize = 8 * 1024 * 1024; // 8MB in bytes
+                
+                if (file.size > maxSize) {
+                    alert('File size exceeds 8MB limit. Please choose a smaller file.');
+                    this.value = '';
+                    fileName.style.display = 'none';
+                    submitBtn.disabled = true;
+                    return;
+                }
+                
+                fileName.innerHTML = `✓ ${file.name} <span style="color: #10b981;">(${(file.size / 1024 / 1024).toFixed(1)} MB)</span>`;
                 fileName.style.display = 'inline-block';
                 submitBtn.disabled = false;
             } else {
